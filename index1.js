@@ -101,33 +101,38 @@ client.on("message", function (message) {
   }
 
   if (command == "register") {
+    const username = message.author.username;
+    const user_id = message.author.id;
+    const icname = args[0]; // Lấy icname từ đối số dòng lệnh
+
+    if (!icname) {
+      message.reply("Bạn phải cung cấp một icname hợp lệ.");
+      return;
+    }
+
+    if (!icname.includes("_")) {
+      message.reply("icname phải chứa dấu '_' giữa hai từ.");
+      return;
+    }
+
     let sql = "SELECT * FROM users WHERE user_id = ?";
-    con.query(sql, [message.author.id], function (err, result) {
+    con.query(sql, [user_id], function (err, result) {
       if (err) throw err;
       if (result != "") {
-        message.reply("You are already registered!!");
+        message.reply("Bạn đã đăng ký tài khoản gacha rồi!");
         return;
       }
       sql =
-        "INSERT INTO users (user_id, username, discriminator, points) VALUES (?, ?, ?, ?)";
-      con.query(
-        sql,
-        [
-          message.author.id,
-          message.author.username,
-          message.author.discriminator,
-          0,
-        ],
-        function (err, result) {
-          if (err) throw err;
-          if (result) {
-            message.reply(
-              "Bạn đã đăng ký tài khoản gacha thành công! Hãy sử dụng $roll để bắt đầu gacha"
-            );
-            return;
-          }
+        "INSERT INTO users (user_id, username, ic, points) VALUES (?, ?, ?, ?)";
+      con.query(sql, [user_id, username, icname, 0], function (err, result) {
+        if (err) throw err;
+        if (result) {
+          message.reply(
+            "Bạn đã đăng ký tài khoản gacha thành công! Hãy sử dụng $roll để bắt đầu gacha"
+          );
+          return;
         }
-      );
+      });
     });
   }
 
