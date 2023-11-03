@@ -60,7 +60,6 @@ client.on("message", function (message) {
   const command = args.shift().toLowerCase();
 
   /****** Kiểm tra ping bot ******/
-
   if (command == "ping") {
     const timeTaken = Date.now() - message.createdTimestamp;
     message.reply(`${timeTaken} ms`);
