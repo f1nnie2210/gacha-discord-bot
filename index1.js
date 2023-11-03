@@ -11,6 +11,7 @@ const con = mysql.createConnection({
   database: config.database,
 });
 
+/****** ******/
 const characters = {
   "1-star": [
     { name: "colt45", picture: "./img/colt45.png" },
@@ -58,6 +59,8 @@ client.on("message", function (message) {
   const args = commandBody.split(" ");
   const command = args.shift().toLowerCase();
 
+  /****** Kiểm tra ping bot ******/
+
   if (command == "ping") {
     const timeTaken = Date.now() - message.createdTimestamp;
     message.reply(`${timeTaken} ms`);
@@ -100,18 +103,24 @@ client.on("message", function (message) {
     }
   }
 
+  /****** $register: tạo tài khoản ******/
   if (command == "register") {
     const username = message.author.username;
     const user_id = message.author.id;
-    const icname = args[0]; // Lấy icname từ đối số dòng lệnh
+    const ic = args[0]; // Lấy ic từ đối số dòng lệnh
 
-    if (!icname) {
-      message.reply("Bạn phải cung cấp một icname hợp lệ.");
+    if (!ic) {
+      message.reply("Bạn phải cung cấp một IC hợp lệ. Ví dụ: Finn_Frederick");
       return;
     }
 
-    if (!icname.includes("_")) {
-      message.reply("icname phải chứa dấu '_' giữa hai từ.");
+    // Sử dụng biểu thức chính quy để kiểm tra ic
+    const icRegex = /^[a-zA-Z]+_[a-zA-Z]+$/;
+
+    if (!icRegex.test(ic)) {
+      message.reply(
+        "IC phải bắt đầu bằng một chữ cái, và sau đó cách nhau bằng dấu '_' và ít nhất 2 từ."
+      );
       return;
     }
 
@@ -119,12 +128,12 @@ client.on("message", function (message) {
     con.query(sql, [user_id], function (err, result) {
       if (err) throw err;
       if (result != "") {
-        message.reply("Bạn đã đăng ký tài khoản gacha rồi!");
+        message.reply("Bạn đã đăng ký tài khoản gacha rồi");
         return;
       }
       sql =
         "INSERT INTO users (user_id, username, ic, points) VALUES (?, ?, ?, ?)";
-      con.query(sql, [user_id, username, icname, 0], function (err, result) {
+      con.query(sql, [user_id, username, ic, 0], function (err, result) {
         if (err) throw err;
         if (result) {
           message.reply(
@@ -136,6 +145,7 @@ client.on("message", function (message) {
     });
   }
 
+  /****** $points: xem điểm ******/
   if (command == "points") {
     let sql = "SELECT * FROM users WHERE user_id = ?";
     con.query(sql, [message.author.id], function (err, result) {
@@ -159,6 +169,7 @@ client.on("message", function (message) {
     });
   }
 
+  /****** $roll: quay gacha ******/
   if (command == "roll") {
     con.query(
       "SELECT * FROM users WHERE user_id = ?",
@@ -220,6 +231,7 @@ client.on("message", function (message) {
     );
   }
 
+  /****** $setpoints: Set điểm (admin) ******/
   if (command == "setpoints") {
     const allowedRoles = ["GachaPW"]; // Các vai trò được phép
     let hasPermission = false;
@@ -272,6 +284,7 @@ client.on("message", function (message) {
     });
   }
 
+  /****** $help: hỗ trợ bot ******/
   if (command == "help") {
     con.query(
       "SELECT * FROM setting WHERE idx = ?",
@@ -290,6 +303,7 @@ client.on("message", function (message) {
 
 client.login(config.BOT_TOKEN);
 
+/****** $func roll: tỉ lệ gacha ******/
 function roll() {
   const number = (Math.floor(Math.random() * 1000) + 1) * 0.1;
   if (number <= 1) {
