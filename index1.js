@@ -215,6 +215,58 @@ client.on("message", function (message) {
     );
   }
 
+  if (command == "setpoints") {
+    const allowedRoles = ["GachaPW"]; // Các vai trò được phép
+    let hasPermission = false;
+
+    message.member.roles.cache.forEach((role) => {
+      if (allowedRoles.includes(role.name)) {
+        hasPermission = true;
+      }
+    });
+
+    if (!hasPermission) {
+      message.reply("Bạn không có quyền truy cập lệnh này.");
+      return;
+    }
+
+    const targetUser = message.mentions.users.first();
+    const newPoints = parseInt(args[1]);
+
+    if (!targetUser || isNaN(newPoints)) {
+      message.reply("Sử dụng cú pháp sai. Ví dụ: $setpoints @username 1");
+      return;
+    }
+
+    // Kiểm tra xem người dùng có tài khoản không
+    const sqlCheckAccount = "SELECT * FROM users WHERE user_id = ?";
+    con.query(sqlCheckAccount, [targetUser.id], function (err, result) {
+      if (err) {
+        message.reply("Lỗi khi kiểm tra tài khoản.");
+        console.error(err);
+      } else if (result.length === 0) {
+        message.reply("Người dùng này không có tài khoản.");
+      } else {
+        // Cập nhật điểm nếu tài khoản tồn tại
+        const sqlUpdatePoints = "UPDATE users SET points = ? WHERE user_id = ?";
+        con.query(
+          sqlUpdatePoints,
+          [newPoints, targetUser.id],
+          function (err, result) {
+            if (err) {
+              message.reply("Lỗi: Không thể cập nhật điểm.");
+              console.error(err);
+            } else {
+              message.reply(
+                `Điểm của ${targetUser.username} đã được cập nhật thành ${newPoints}`
+              );
+            }
+          }
+        );
+      }
+    });
+  }
+
   if (command == "help") {
     con.query(
       "SELECT * FROM setting WHERE idx = ?",
