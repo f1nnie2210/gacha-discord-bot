@@ -48,25 +48,6 @@ client.on("message", function (message) {
         if (err) console.log(err);
         if (res != "") {
           if (res[0].value == message.channel.id) {
-            con.query(
-              "SELECT * FROM users WHERE user_id = ?",
-              [message.author.id],
-              function (err, res) {
-                if (err) console.log(err);
-                if (res != "") {
-                  let points = parseInt(res[0].points) + 10;
-                  con.query(
-                    "UPDATE users SET points = ? WHERE user_id = ?",
-                    [points, message.author.id],
-                    function (err, upd) {
-                      if (err) console.log(err);
-                      if (upd) console.log("add 5 points");
-                      return;
-                    }
-                  );
-                }
-              }
-            );
           }
         }
       }
@@ -155,12 +136,21 @@ client.on("message", function (message) {
     con.query(sql, [message.author.id], function (err, result) {
       if (err) throw err;
       if (result != "") {
-        message.reply(`Your current point is ${result[0].points}`);
-        return;
+        const points = result[0].points;
+        if (points !== null && points !== undefined) {
+          if (points === 0) {
+            message.reply("Bạn không có điểm.");
+          } else {
+            message.reply(`Số điểm hiện tại của bạn là: ${points}`);
+          }
+        } else {
+          message.reply("Lỗi: Không thể xác định điểm của bạn.");
+        }
+      } else {
+        message.reply(
+          "Bạn phải đăng ký tài khoản gacha trước. Nhập $register để đăng ký tài khoản."
+        );
       }
-      message.reply(
-        "Bạn phải đăng ký tài khoản gacha trước. Nhập $register để đăng ký tài khoản"
-      );
     });
   }
 
@@ -218,7 +208,7 @@ client.on("message", function (message) {
           }
         } else {
           message.reply(
-            "Bạn chưa đăng ký tài khoản gacha. Nhập $register để đăng kí tài khoản gacha"
+            "Bạn chưa đăng ký tài khoản gacha. Nhập $register để đăng kí tài khoản"
           );
         }
       }
