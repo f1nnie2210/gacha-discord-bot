@@ -4,6 +4,7 @@ const client = new Discord.Client();
 const fs = require("fs");
 const prefix = "$";
 const mysql = require("mysql");
+
 const con = mysql.createConnection({
   host: config.host,
   user: config.user,
@@ -11,8 +12,16 @@ const con = mysql.createConnection({
   database: config.database,
 });
 
+con.connect(function (err) {
+  if (err) {
+    console.error("Lỗi kết nối cơ sở dữ liệu: " + err.stack);
+    return;
+  }
+  console.log("Kết nối cơ sở dữ liệu thành công với ID " + con.threadId);
+});
+
 /****** ******/
-const characters = {
+const items = {
   "1-star": [
     { name: "colt45", picture: "./img/colt45.png" },
     { name: "pistol", picture: "./img/pistol.png" },
@@ -39,59 +48,51 @@ const characters = {
 };
 
 client.on("message", function (message) {
-  // console.log(message)
   if (message.author.bot) return;
-  if (!message.content.startsWith(prefix)) {
-    con.query(
-      "SELECT * FROM setting WHERE idx = ?",
-      ["channel"],
-      function (err, res) {
-        if (err) console.log(err);
-        if (res != "") {
-          if (res[0].value == message.channel.id) {
-          }
-        }
-      }
-    );
+
+  // Tách lệnh và đối số
+  let command = "";
+  let args = [];
+
+  if (message.content.startsWith(prefix)) {
+    const commandBody = message.content.slice(prefix.length);
+    args = commandBody.split(" ");
+    command = args.shift().toLowerCase();
+  } else {
+    // Xử lý tin nhắn bình thường khi không có prefix
   }
-
-  const commandBody = message.content.slice(prefix.length);
-  const args = commandBody.split(" ");
-  const command = args.shift().toLowerCase();
-
-  /****** Kiểm tra ping bot ******/
+  /****** $ping: Kiểm tra ping bot ******/
   if (command == "ping") {
     const timeTaken = Date.now() - message.createdTimestamp;
     message.reply(`${timeTaken} ms`);
   }
 
+  /****** $setting addchannel <#channel>: Thêm kênh được phép $roll ******/
   if (command == "setting") {
-    if (args[0] == "channel") {
+    if (args[0] == "addchannel") {
       let set_channel = args[1].split("#");
       set_channel = set_channel[1].split(">");
       set_channel = set_channel[0];
+
+      // Kiểm tra xem kênh đã được thêm trước đó hay chưa
       con.query(
-        "SELECT * FROM setting WHERE idx = ?",
-        ["channel"],
+        "SELECT * FROM allowed_channels WHERE channel_id = ?",
+        [set_channel],
         function (err, res) {
           if (err) console.log(err);
           if (res != "") {
-            con.query(
-              "UPDATE setting SET value = ? WHERE idx = 'channel'",
-              [set_channel],
-              function (err, upd) {
-                if (err) console.log(err);
-                if (upd) message.channel.send(`Update to channel ${args[1]}`);
-              }
-            );
+            message.channel.send(`Kênh ${args[1]} đã được thêm trước đó.`);
           } else {
+            // Thêm kênh vào danh sách được phép
             con.query(
-              "INSERT INTO setting (idx, value) VALUES ('channel', ?)",
+              "INSERT INTO allowed_channels (channel_id) VALUES (?)",
               [set_channel],
               function (err, res) {
                 if (err) console.log(err);
                 if (res) {
-                  message.channel.send(`Create to channel ${args[1]}`);
+                  message.channel.send(
+                    `Đã thêm kênh ${args[1]} vào danh sách được phép.`
+                  );
                 }
               }
             );
@@ -176,51 +177,78 @@ client.on("message", function (message) {
       function (err, res) {
         if (err) console.log(err);
         if (res != "") {
-          if (res[0].points >= 1) {
-            const getNumber = roll();
-            let msg = "";
-            let files = "";
-            let character = "";
+          con.query(
+            "SELECT * FROM allowed_channels WHERE channel_id = ?",
+            [message.channel.id],
+            function (err, settingRes) {
+              if (err) console.log(err);
 
-            switch (getNumber[0]) {
-              case 4:
-                character = characters["4-star"][getNumber[1]].name;
-                msg = `You Got ${character} :star: :star: :star: :star:`;
-                files = characters["4-star"][getNumber[1]].picture;
-                break;
-              case 3:
-                character = characters["3-star"][getNumber[1]].name;
-                msg = `You Got ${character} :star: :star: :star:`;
-                files = characters["3-star"][getNumber[1]].picture;
-                break;
-              case 2:
-                character = characters["2-star"][getNumber[1]].name;
-                msg = `You Got ${character} :star: :star:`;
-                files = characters["2-star"][getNumber[1]].picture;
-                break;
-              default:
-                character = characters["1-star"][getNumber[1]].name;
-                msg = `You Got ${character} :star:`;
-                files = characters["1-star"][getNumber[1]].picture;
-                break;
-            }
+              if (settingRes.length > 0) {
+                // Nếu kênh hiện tại nằm trong danh sách cho phép
+                if (res[0].points >= 1) {
+                  const getNumber = roll();
+                  let msg = "";
+                  let files = "";
+                  let item = "";
 
-            message.channel.send(msg, {
-              files: [files],
-            });
-            let points = parseInt(res[0].points) - 1;
-            con.query(
-              "UPDATE users SET points = ? WHERE user_id = ?",
-              [points, message.author.id],
-              function (err, res) {
-                //update points
-                if (err) console.log(err);
-                if (res) console.log(res);
+                  switch (getNumber[0]) {
+                    case 4:
+                      item = items["4-star"][getNumber[1]].name;
+                      msg = `You Got ${item} :star: :star: :star: :star:`;
+                      files = items["4-star"][getNumber[1]].picture;
+                      break;
+                    case 3:
+                      item = items["3-star"][getNumber[1]].name;
+                      msg = `You Got ${item} :star: :star: :star:`;
+                      files = items["3-star"][getNumber[1]].picture;
+                      break;
+                    case 2:
+                      item = items["2-star"][getNumber[1]].name;
+                      msg = `You Got ${item} :star: :star:`;
+                      files = items["2-star"][getNumber[1]].picture;
+                      break;
+                    default:
+                      item = items["1-star"][getNumber[1]].name;
+                      msg = `You Got ${item} :star:`;
+                      files = items["1-star"][getNumber[1]].picture;
+                      break;
+                  }
+
+                  message.channel.send(msg, {
+                    files: [files],
+                  });
+                  let points = parseInt(res[0].points) - 1;
+                  con.query(
+                    "UPDATE users SET points = ? WHERE user_id = ?",
+                    [points, message.author.id],
+                    function (err, res) {
+                      if (err) console.log(err);
+                      if (res) console.log(res);
+                    }
+                  );
+
+                  // Lưu kết quả vào bảng gacha_result
+                  const userId = message.author.id;
+                  const ic = res[0].ic;
+                  const itemName = item;
+                  con.query(
+                    "INSERT INTO gacha_result (user_id, ic, item_name) VALUES (?, ?, ?)",
+                    [userId, ic, itemName],
+                    function (err, res) {
+                      if (err) console.log(err);
+                      if (res) console.log("Kết quả gacha đã được lưu.");
+                    }
+                  );
+                } else {
+                  message.reply(
+                    "Không đủ point, bạn cần ít nhất 1 point để quay"
+                  );
+                }
+              } else {
+                message.reply("Bạn không thể sử dụng lệnh roll ở channel này.");
               }
-            );
-          } else {
-            message.reply("Không đủ point, bạn cần ít nhất 1 point để quay");
-          }
+            }
+          );
         } else {
           message.reply(
             "Bạn chưa đăng ký tài khoản gacha. Nhập $register để đăng kí tài khoản"
@@ -306,20 +334,16 @@ client.login(config.BOT_TOKEN);
 function roll() {
   const number = (Math.floor(Math.random() * 1000) + 1) * 0.1;
   if (number <= 1) {
-    const random = Math.floor(Math.random() * characters["4-star"].length);
-    console.log(random);
+    const random = Math.floor(Math.random() * items["4-star"].length);
     return [4, random];
   } else if (number <= 11) {
-    const random = Math.floor(Math.random() * characters["3-star"].length);
-    console.log(random);
+    const random = Math.floor(Math.random() * items["3-star"].length);
     return [3, random];
   } else if (number <= 31) {
-    const random = Math.floor(Math.random() * characters["2-star"].length);
-    console.log(random);
+    const random = Math.floor(Math.random() * items["2-star"].length);
     return [2, random];
   } else {
-    const random = Math.floor(Math.random() * characters["1-star"].length);
-    console.log(random);
+    const random = Math.floor(Math.random() * items["1-star"].length);
     return [1, random];
   }
 }
