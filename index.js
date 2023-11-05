@@ -20,31 +20,42 @@ con.connect(function (err) {
   console.log("Kết nối cơ sở dữ liệu thành công với ID " + con.threadId);
 });
 
-/****** ******/
-const items = {
+/****** Item list ******/
+const gun_items = {
   "1-star": [
-    { name: "colt45", picture: "./img/colt45.png" },
-    { name: "pistol", picture: "./img/pistol.png" },
-    { name: "20 đạn súng lục", picture: "./img/lucammo.png" },
-    // Thêm thông tin cho các vật phẩm 1 sao
+    { name: "Colt45", picture: "./img/gun/colt45.png" },
+    { name: "Pistol", picture: "./img/gun/pistol.png" },
+    { name: "20 đạn súng lục", picture: "./img/gun/lucammo.png" },
   ],
   "2-star": [
-    { name: "tec9", picture: "./img/tec9.png" },
-    { name: "uzi", picture: "./img/uzi.png" },
-    { name: "30 đạn tiểu liên", picture: "./img/tieulienammo.png" },
-    // Thêm thông tin cho các vật phẩm 3 sao
+    { name: "Tec9", picture: "./img/gun/tec9.png" },
+    { name: "Uzi", picture: "./img/gun/uzi.png" },
+    { name: "30 đạn tiểu liên", picture: "./img/gun/tieulienammo.png" },
   ],
   "3-star": [
-    { name: "shotgun", picture: "./img/shotgun.png" },
-    { name: "deagle", picture: "./img/deagle.png" },
-    { name: "40 đạn súng lục", picture: "./img/lucammo.png" },
-    { name: "40 đạn shotgun", picture: "./img/shotgunammo.png" },
-    // Thêm thông tin cho vp 4 sao
+    { name: "Shotgun", picture: "./img/gun/shotgun.png" },
+    { name: "Deagle", picture: "./img/gun/deagle.png" },
+    { name: "40 đạn súng lục", picture: "./img/gun/lucammo.png" },
+    { name: "40 đạn shotgun", picture: "./img/gun/shotgunammo.png" },
   ],
   "4-star": [
-    { name: "mp5", picture: "./img/mp5.png" },
-    { name: "40 đạn tiểu liên", picture: "./img/tieulienammo.png" },
+    { name: "Mp5", picture: "./img/gun/mp5.png" },
+    { name: "40 đạn tiểu liên", picture: "./img/gun/tieulienammo.png" },
   ],
+};
+
+const car_items = {
+  "1-star": [{ name: "Walton", picture: "./img/car/walton.jpg" }],
+  "2-star": [{ name: "Yosemite", picture: "./img/car/yosemite.jpg" }],
+  "3-star": [
+    { name: "Pony", picture: "./img/car/pony.jpg" },
+    { name: "RCVan", picture: "./img/car/vans.jpg" },
+  ],
+  "4-star": [
+    { name: "Burrito", picture: "./img/car/burrito.jpg" },
+    { name: "Boxville", picture: "./img/car/boxville.jpg" },
+  ],
+  "5-star": [{ name: "Rumpo", picture: "./img/car/rumpo.jpg" }],
 };
 
 client.on("message", function (message) {
@@ -85,7 +96,7 @@ client.on("message", function (message) {
           } else {
             // Thêm kênh vào danh sách được phép
             con.query(
-              "INSERT INTO allowed_channels (channel_id) VALUES (?)",
+              "INSERT INTO allowed_channels (channel_id, created_at) VALUES (?, NOW())",
               [set_channel],
               function (err, res) {
                 if (err) console.log(err);
@@ -115,7 +126,7 @@ client.on("message", function (message) {
     }
 
     // Sử dụng biểu thức chính quy để kiểm tra ic
-    const icRegex = /^[a-zA-Z]+_[a-zA-Z]+$/;
+    const icRegex = /^[a-zA-Z]+_[a-zA-Z]+(?:_[a-zA-Z]+)*$/;
 
     if (!icRegex.test(ic)) {
       message.reply(
@@ -132,7 +143,7 @@ client.on("message", function (message) {
         return;
       }
       sql =
-        "INSERT INTO users (user_id, username, ic, points) VALUES (?, ?, ?, ?)";
+        "INSERT INTO users (user_id, username, ic, points, created_at) VALUES (?, ?, ?, ?, NOW())";
       con.query(sql, [user_id, username, ic, 0], function (err, result) {
         if (err) throw err;
         if (result) {
@@ -169,93 +180,33 @@ client.on("message", function (message) {
     });
   }
 
-  /****** $roll: quay gacha ******/
-  if (command == "roll") {
-    con.query(
-      "SELECT * FROM users WHERE user_id = ?",
-      [message.author.id],
-      function (err, res) {
-        if (err) console.log(err);
-        if (res != "") {
-          con.query(
-            "SELECT * FROM allowed_channels WHERE channel_id = ?",
-            [message.channel.id],
-            function (err, settingRes) {
-              if (err) console.log(err);
+  /****** $roll: quay gacha theo pack ******/
+  if (command === "roll") {
+    const gachaType = args[0];
 
-              if (settingRes.length > 0) {
-                // Nếu kênh hiện tại nằm trong danh sách cho phép
-                if (res[0].points >= 1) {
-                  const getNumber = roll();
-                  let msg = "";
-                  let files = "";
-                  let item = "";
-
-                  switch (getNumber[0]) {
-                    case 4:
-                      item = items["4-star"][getNumber[1]].name;
-                      msg = `You Got ${item} :star: :star: :star: :star:`;
-                      files = items["4-star"][getNumber[1]].picture;
-                      break;
-                    case 3:
-                      item = items["3-star"][getNumber[1]].name;
-                      msg = `You Got ${item} :star: :star: :star:`;
-                      files = items["3-star"][getNumber[1]].picture;
-                      break;
-                    case 2:
-                      item = items["2-star"][getNumber[1]].name;
-                      msg = `You Got ${item} :star: :star:`;
-                      files = items["2-star"][getNumber[1]].picture;
-                      break;
-                    default:
-                      item = items["1-star"][getNumber[1]].name;
-                      msg = `You Got ${item} :star:`;
-                      files = items["1-star"][getNumber[1]].picture;
-                      break;
-                  }
-
-                  message.channel.send(msg, {
-                    files: [files],
-                  });
-                  let points = parseInt(res[0].points) - 1;
-                  con.query(
-                    "UPDATE users SET points = ? WHERE user_id = ?",
-                    [points, message.author.id],
-                    function (err, res) {
-                      if (err) console.log(err);
-                      if (res) console.log(res);
-                    }
-                  );
-
-                  // Lưu kết quả vào bảng gacha_result
-                  const userId = message.author.id;
-                  const ic = res[0].ic;
-                  const itemName = item;
-                  con.query(
-                    "INSERT INTO gacha_result (user_id, ic, item_name) VALUES (?, ?, ?)",
-                    [userId, ic, itemName],
-                    function (err, res) {
-                      if (err) console.log(err);
-                      if (res) console.log("Kết quả gacha đã được lưu.");
-                    }
-                  );
-                } else {
-                  message.reply(
-                    "Không đủ point, bạn cần ít nhất 1 point để quay"
-                  );
-                }
+    if (gachaType === "gun" || gachaType === "car") {
+      con.query(
+        "SELECT * FROM allowed_channels WHERE channel_id = ?",
+        [message.channel.id],
+        function (err, settingRes) {
+          if (err) {
+            console.log(err);
+          } else {
+            if (settingRes.length > 0) {
+              if (gachaType === "gun") {
+                handleGunGacha(message);
               } else {
-                message.reply("Bạn không thể sử dụng lệnh roll ở channel này.");
+                handleCarGacha(message);
               }
+            } else {
+              message.reply("Bạn không thể sử dụng lệnh gacha ở kênh này.");
             }
-          );
-        } else {
-          message.reply(
-            "Bạn chưa đăng ký tài khoản gacha. Nhập $register để đăng kí tài khoản"
-          );
+          }
         }
-      }
-    );
+      );
+    } else {
+      message.reply("Sử dụng '$roll gun' hoặc '$roll car'.");
+    }
   }
 
   /****** $setpoints: Set điểm (admin) ******/
@@ -330,20 +281,194 @@ client.on("message", function (message) {
 
 client.login(config.BOT_TOKEN);
 
+/******func: Xử lý gacha theo gói ******/
+function handleGunGacha(message) {
+  con.query(
+    "SELECT * FROM users WHERE user_id = ?",
+    [message.author.id],
+    function (err, res) {
+      if (err) console.log(err);
+      if (res != "") {
+        // Xử lý quay gacha cho gói "gun"
+        if (res[0].points >= 1) {
+          const getNumber = rollgun();
+          let msg = "";
+          let files = "";
+          let item = "";
+
+          switch (getNumber[0]) {
+            case 4:
+              item = gun_items["4-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star: :star: :star: :star:`;
+              files = gun_items["4-star"][getNumber[1]].picture;
+              break;
+            case 3:
+              item = gun_items["3-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star: :star: :star:`;
+              files = gun_items["3-star"][getNumber[1]].picture;
+              break;
+            case 2:
+              item = gun_items["2-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star: :star:`;
+              files = gun_items["2-star"][getNumber[1]].picture;
+              break;
+            default:
+              item = gun_items["1-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star:`;
+              files = gun_items["1-star"][getNumber[1]].picture;
+              break;
+          }
+
+          message.channel.send(msg, {
+            files: [files],
+          });
+          let points = parseInt(res[0].points) - 1;
+          con.query(
+            "UPDATE users SET points = ? WHERE user_id = ?",
+            [points, message.author.id],
+            function (err, res) {
+              if (err) console.log(err);
+              if (res) console.log(res);
+            }
+          );
+
+          // Lưu kết quả vào bảng gacha_result
+          const userId = message.author.id;
+          const ic = res[0].ic;
+          const itemName = item;
+          con.query(
+            "INSERT INTO gacha_result_gun (user_id, ic, gun_name, created_at) VALUES (?, ?, ?, NOW())",
+            [userId, ic, itemName],
+            function (err, res) {
+              if (err) console.log(err);
+              if (res) console.log("Kết quả gacha đã được lưu.");
+            }
+          );
+        } else {
+          message.reply("Không đủ point, bạn cần ít nhất 1 point để roll gun");
+        }
+      } else {
+        message.reply(
+          "Bạn chưa đăng ký tài khoản gacha. Nhập $register để đăng kí tài khoản"
+        );
+      }
+    }
+  );
+}
+
+function handleCarGacha(message) {
+  con.query(
+    "SELECT * FROM users WHERE user_id = ?",
+    [message.author.id],
+    function (err, res) {
+      if (err) console.log(err);
+      if (res != "") {
+        // Xử lý quay gacha cho gói "car"
+        if (res[0].points >= 1) {
+          const getNumber = rollcar();
+          let msg = "";
+          let files = "";
+          let item = "";
+
+          switch (getNumber[0]) {
+            case 5:
+              item = car_items["5-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star: :star: :star: :star: :star:`;
+              files = car_items["5-star"][getNumber[1]].picture;
+              break;
+            case 4:
+              item = car_items["4-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star: :star: :star: :star:`;
+              files = car_items["4-star"][getNumber[1]].picture;
+              break;
+            case 3:
+              item = car_items["3-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star: :star: :star:`;
+              files = car_items["3-star"][getNumber[1]].picture;
+              break;
+            case 2:
+              item = car_items["2-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star: :star:`;
+              files = car_items["2-star"][getNumber[1]].picture;
+              break;
+            default:
+              item = car_items["1-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star:`;
+              files = car_items["1-star"][getNumber[1]].picture;
+              break;
+          }
+
+          message.channel.send(msg, {
+            files: [files],
+          });
+          let points = parseInt(res[0].points) - 2;
+          con.query(
+            "UPDATE users SET points = ? WHERE user_id = ?",
+            [points, message.author.id],
+            function (err, res) {
+              if (err) console.log(err);
+              if (res) console.log(res);
+            }
+          );
+
+          // Lưu kết quả vào bảng gacha_result
+          const userId = message.author.id;
+          const ic = res[0].ic;
+          const itemName = item;
+          con.query(
+            "INSERT INTO gacha_result_car (user_id, ic, car_name, created_at) VALUES (?, ?, ?, NOW())",
+            [userId, ic, itemName],
+            function (err, res) {
+              if (err) console.log(err);
+              if (res) console.log("Kết quả gacha đã được lưu.");
+            }
+          );
+        } else {
+          message.reply("Không đủ point, bạn cần ít nhất 2 point để roll car");
+        }
+      } else {
+        message.reply(
+          "Bạn chưa đăng ký tài khoản gacha. Nhập $register để đăng kí tài khoản"
+        );
+      }
+    }
+  );
+}
+
 /****** $func roll: tỉ lệ gacha ******/
-function roll() {
+function rollgun() {
   const number = (Math.floor(Math.random() * 1000) + 1) * 0.1;
   if (number <= 1) {
-    const random = Math.floor(Math.random() * items["4-star"].length);
+    const random = Math.floor(Math.random() * gun_items["4-star"].length);
     return [4, random];
   } else if (number <= 11) {
-    const random = Math.floor(Math.random() * items["3-star"].length);
+    const random = Math.floor(Math.random() * gun_items["3-star"].length);
     return [3, random];
   } else if (number <= 31) {
-    const random = Math.floor(Math.random() * items["2-star"].length);
+    const random = Math.floor(Math.random() * gun_items["2-star"].length);
     return [2, random];
   } else {
-    const random = Math.floor(Math.random() * items["1-star"].length);
+    const random = Math.floor(Math.random() * gun_items["1-star"].length);
+    return [1, random];
+  }
+}
+
+function rollcar() {
+  const number = (Math.floor(Math.random() * 1000) + 1) * 0.1;
+  if (number <= 1) {
+    const random = Math.floor(Math.random() * car_items["5-star"].length);
+    return [5, random];
+  } else if (number <= 9) {
+    const random = Math.floor(Math.random() * car_items["4-star"].length);
+    return [4, random];
+  } else if (number <= 24) {
+    const random = Math.floor(Math.random() * car_items["3-star"].length);
+    return [3, random];
+  } else if (number <= 54) {
+    const random = Math.floor(Math.random() * car_items["2-star"].length);
+    return [2, random];
+  } else {
+    const random = Math.floor(Math.random() * car_items["1-star"].length);
     return [1, random];
   }
 }
