@@ -364,7 +364,7 @@ function handleCarGacha(message) {
       if (err) console.log(err);
       if (res != "") {
         // Xử lý quay gacha cho gói "car"
-        if (res[0].points >= 1) {
+        if (res[0].points >= 2) {
           const getNumber = rollcar();
           let msg = "";
           let files = "";
