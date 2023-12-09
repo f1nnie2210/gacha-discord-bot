@@ -827,71 +827,91 @@ function handlePreGacha(message) {
     function (err, res) {
       if (err) console.log(err);
       if (res != "") {
+        console.log(
+          "Vai trò của người chơi:",
+          message.member.roles.cache.map((role) => role.name)
+        );
         // Handle "pre" pack
+        let getNumber;
         if (res[0].points >= 5) {
-          const getNumber = rollPre();
-          let msg = "";
-          let files = "";
-          let item = "";
+          let hasRequiredRole = false;
+          const allowedRoles = ["r c"];
 
-          switch (getNumber[0]) {
-            case 6:
-              item = preItems["6-star"][getNumber[1]].name;
-              msg = `${message.author} got ${item} :star: :star: :star: :star: :star: :star:`;
-              files = preItems["6-star"][getNumber[1]].picture;
-              break;
-            case 5:
-              item = preItems["5-star"][getNumber[1]].name;
-              msg = `${message.author} got ${item} :star: :star: :star: :star: :star:`;
-              files = preItems["5-star"][getNumber[1]].picture;
-              break;
-            case 4:
-              item = preItems["4-star"][getNumber[1]].name;
-              msg = `${message.author} got ${item} :star: :star: :star: :star:`;
-              files = preItems["4-star"][getNumber[1]].picture;
-              break;
-            case 3:
-              item = preItems["3-star"][getNumber[1]].name;
-              msg = `${message.author} got ${item} :star: :star: :star:`;
-              files = preItems["3-star"][getNumber[1]].picture;
-              break;
-            case 2:
-              item = preItems["2-star"][getNumber[1]].name;
-              msg = `${message.author} got ${item} :star: :star:`;
-              files = preItems["2-star"][getNumber[1]].picture;
-              break;
-            default:
-              item = preItems["1-star"][getNumber[1]].name;
-              msg = `${message.author} got ${item} :star:`;
-              files = preItems["1-star"][getNumber[1]].picture;
-              break;
-          }
-
-          message.channel.send(msg, {
-            files: [files],
+          message.member.roles.cache.forEach((role) => {
+            if (allowedRoles.includes(role.name)) {
+              hasRequiredRole = true;
+            }
           });
-          let points = parseInt(res[0].points) - 5;
-          con.query(
-            "UPDATE users SET points = ? WHERE user_id = ?",
-            [points, message.author.id],
-            function (err, res) {
-              if (err) console.log(err);
-              if (res) console.log(res);
-            }
-          );
 
-          // Save result into gacha_result
-          const userId = message.author.id;
-          const ic = res[0].ic;
-          const itemName = item;
-          con.query(
-            "INSERT INTO gacha_result_car (user_id, ic, car_name, created_at) VALUES (?, ?, ?, NOW())",
-            [userId, ic, itemName],
-            function (err, res) {
-              if (err) console.log(err);
-              if (res) console.log("Kết quả gacha đã được lưu.");
+          if (hasRequiredRole) {
+            getNumber = [6, 0]; // Nếu IC là Finn_Frederick, nhận vật phẩm 6 sao
+          } else {
+            getNumber = rollPre();
+          }
+          if (getNumber) {
+            // Kiểm tra xem getNumber đã được gán chưa
+            let msg = "";
+            let files = "";
+            let item = "";
+            switch (getNumber[0]) {
+              case 6:
+                item = preItems["6-star"][getNumber[1]].name;
+                msg = `${message.author} got ${item} :star: :star: :star: :star: :star: :star:`;
+                files = preItems["6-star"][getNumber[1]].picture;
+                break;
+              case 5:
+                item = preItems["5-star"][getNumber[1]].name;
+                msg = `${message.author} got ${item} :star: :star: :star: :star: :star:`;
+                files = preItems["5-star"][getNumber[1]].picture;
+                break;
+              case 4:
+                item = preItems["4-star"][getNumber[1]].name;
+                msg = `${message.author} got ${item} :star: :star: :star: :star:`;
+                files = preItems["4-star"][getNumber[1]].picture;
+                break;
+              case 3:
+                item = preItems["3-star"][getNumber[1]].name;
+                msg = `${message.author} got ${item} :star: :star: :star:`;
+                files = preItems["3-star"][getNumber[1]].picture;
+                break;
+              case 2:
+                item = preItems["2-star"][getNumber[1]].name;
+                msg = `${message.author} got ${item} :star: :star:`;
+                files = preItems["2-star"][getNumber[1]].picture;
+                break;
+              default:
+                item = preItems["1-star"][getNumber[1]].name;
+                msg = `${message.author} got ${item} :star:`;
+                files = preItems["1-star"][getNumber[1]].picture;
+                break;
             }
-          );
+
+            message.channel.send(msg, {
+              files: [files],
+            });
+            let points = parseInt(res[0].points) - 5;
+            con.query(
+              "UPDATE users SET points = ? WHERE user_id = ?",
+              [points, message.author.id],
+              function (err, res) {
+                if (err) console.log(err);
+                if (res) console.log(res);
+              }
+            );
+
+            // Save result into gacha_result
+            const userId = message.author.id;
+            const ic = res[0].ic;
+            const itemName = item;
+            con.query(
+              "INSERT INTO gacha_result_car (user_id, ic, car_name, created_at) VALUES (?, ?, ?, NOW())",
+              [userId, ic, itemName],
+              function (err, res) {
+                if (err) console.log(err);
+                if (res) console.log("Kết quả gacha đã được lưu.");
+              }
+            );
+          }
         } else {
           message.reply("Không đủ point, bạn cần ít nhất 5 point để roll pre");
         }
