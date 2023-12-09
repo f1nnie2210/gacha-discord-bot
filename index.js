@@ -893,7 +893,7 @@ function handlePreGacha(message) {
             }
           );
         } else {
-          message.reply("Không đủ point, bạn cần ít nhất 3 point để roll veh");
+          message.reply("Không đủ point, bạn cần ít nhất 5 point để roll pre");
         }
       } else {
         message.reply(
