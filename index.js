@@ -4,6 +4,7 @@ const client = new Discord.Client();
 const fs = require("fs");
 const prefix = "$";
 const mysql = require("mysql");
+const cloudinary = require("cloudinary").v2;
 
 const con = mysql.createConnection({
   host: config.host,
@@ -11,6 +12,9 @@ const con = mysql.createConnection({
   password: config.password,
   database: config.database,
 });
+
+const cloudinaryConfig = config.cloudinary;
+cloudinary.config(cloudinaryConfig);
 
 con.connect(function (err) {
   if (err) {
@@ -24,78 +28,333 @@ const gachaHandlers = {
   gun: handleGunGacha,
   veh: handleVehGacha,
   car: handleCarGacha,
+  pre: handlePreGacha,
 };
 
 /****** Item list ******/
 const gunItems = {
   "1-star": [
-    { name: "Colt45", picture: "./img/gun/colt45.png" },
-    { name: "Pistol", picture: "./img/gun/pistol.png" },
-    { name: "20 đạn súng lục", picture: "./img/gun/lucammo.png" },
+    {
+      name: "Colt45",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107473/gacha-discord-bot/gun/colt45.png",
+    },
+    {
+      name: "Pistol",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107473/gacha-discord-bot/gun/silenced-pistol.png",
+    },
+    {
+      name: "20 đạn súng lục",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107473/gacha-discord-bot/gun/pistol-bullet.png",
+    },
   ],
   "2-star": [
-    { name: "Tec9", picture: "./img/gun/tec9.png" },
-    { name: "Uzi", picture: "./img/gun/uzi.png" },
-    { name: "30 đạn tiểu liên", picture: "./img/gun/tieulienammo.png" },
+    {
+      name: "Tec9",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107474/gacha-discord-bot/gun/tec9.png",
+    },
+    {
+      name: "Uzi",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107474/gacha-discord-bot/gun/uzi.png",
+    },
+    {
+      name: "30 đạn tiểu liên",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107474/gacha-discord-bot/gun/smg-bullet.png",
+    },
   ],
   "3-star": [
-    { name: "Shotgun", picture: "./img/gun/shotgun.png" },
-    { name: "Deagle", picture: "./img/gun/deagle.png" },
-    { name: "40 đạn súng lục", picture: "./img/gun/lucammo.png" },
-    { name: "40 đạn shotgun", picture: "./img/gun/shotgunammo.png" },
+    {
+      name: "Shotgun",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107473/gacha-discord-bot/gun/shotgun.png",
+    },
+    {
+      name: "Deagle",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107473/gacha-discord-bot/gun/desert-eagle.png",
+    },
+    {
+      name: "40 đạn súng lục",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107473/gacha-discord-bot/gun/pistol-bullet.png",
+    },
+    {
+      name: "40 đạn shotgun",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107474/gacha-discord-bot/gun/shotgun-bullet.png",
+    },
   ],
   "4-star": [
-    { name: "Mp5", picture: "./img/gun/mp5.png" },
-    { name: "40 đạn tiểu liên", picture: "./img/gun/tieulienammo.png" },
+    {
+      name: "Mp5",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107473/gacha-discord-bot/gun/mp5.png",
+    },
+    {
+      name: "40 đạn tiểu liên",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107474/gacha-discord-bot/gun/smg-bullet.png",
+    },
   ],
 };
 
 const carItems = {
-  "1-star": [{ name: "Yosemite", picture: "./img/car/yosemite.jpg" }],
+  "1-star": [
+    {
+      name: "Yosemite",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107472/gacha-discord-bot/car/yosemite.jpg",
+    },
+  ],
   "2-star": [
-    { name: "Pony", picture: "./img/car/pony.jpg" },
-    { name: "RCVan", picture: "./img/car/vans.jpg" },
+    {
+      name: "Pony",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107472/gacha-discord-bot/car/pony.jpg",
+    },
+    {
+      name: "RCVan",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107472/gacha-discord-bot/car/vans.jpg",
+    },
   ],
-  "3-star": [{ name: "Burrito", picture: "./img/car/burrito.jpg" }],
+  "3-star": [
+    {
+      name: "Burrito",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107472/gacha-discord-bot/car/burrito.jpg",
+    },
+  ],
   "4-star": [
-    { name: "Rumpo", picture: "./img/car/rumpo.jpg" },
-    { name: "Boxville", picture: "./img/car/boxville.jpg" },
+    {
+      name: "Rumpo",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107472/gacha-discord-bot/car/rumpo.jpg",
+    },
+    {
+      name: "Boxville",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107472/gacha-discord-bot/car/boxville.jpg",
+    },
   ],
-  "5-star": [{ name: "Benson", picture: "./img/car/benson.png" }],
-  "6-star": [{ name: "Mule", picture: "./img/car/mule.png" }],
+  "5-star": [
+    {
+      name: "Benson",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107472/gacha-discord-bot/car/benson.png",
+    },
+  ],
+  "6-star": [
+    {
+      name: "Mule",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107472/gacha-discord-bot/car/mule.png",
+    },
+  ],
 };
 
 const vehItems = {
   "1-star": [
-    { name: "Feltzer", picture: "./img/veh/1/Feltzer.png" },
-    { name: "Windsor", picture: "./img/veh/1/Windsor.png" },
-    { name: "Hermes", picture: "./img/veh/1/Hermes.png" },
-    { name: "Mesa", picture: "./img/veh/1/Mesa.png" },
+    {
+      name: "Feltzer",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107469/gacha-discord-bot/veh/1/feltzer.png",
+    },
+    {
+      name: "Windsor",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107470/gacha-discord-bot/veh/1/windsor.png",
+    },
+    {
+      name: "Hermes",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107469/gacha-discord-bot/veh/1/hermes.png",
+    },
+    {
+      name: "Mesa",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107469/gacha-discord-bot/veh/1/mesa.png",
+    },
   ],
   "2-star": [
-    { name: "Broadway", picture: "./img/veh/2/Broadway.png" },
-    { name: "Hustler", picture: "./img/veh/2/Hustler.png" },
-    { name: "Blade", picture: "./img/veh/2/Blade.png" },
-    { name: "Comet", picture: "./img/veh/2/Comet.png" },
+    {
+      name: "Broadway",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107470/gacha-discord-bot/veh/2/broadway.png",
+    },
+    {
+      name: "Hustler",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107471/gacha-discord-bot/veh/2/hustler.png",
+    },
+    {
+      name: "Blade",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107470/gacha-discord-bot/veh/2/blade.png",
+    },
+    {
+      name: "Comet",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107470/gacha-discord-bot/veh/2/comet.png",
+    },
   ],
   "3-star": [
-    { name: "Slamvan", picture: "./img/veh/3/Slamvan.png" },
-    { name: "Savanna", picture: "./img/veh/3/Savanna.png" },
-    { name: "Voodoo", picture: "./img/veh/3/Voodoo.png" },
-    { name: "Remington", picture: "./img/veh/3/Remington.png" },
+    {
+      name: "Slamvan",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107471/gacha-discord-bot/veh/3/slamvan.png",
+    },
+    {
+      name: "Savanna",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107471/gacha-discord-bot/veh/3/savanna.png",
+    },
+    {
+      name: "Voodoo",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107471/gacha-discord-bot/veh/3/voodoo.png",
+    },
+    {
+      name: "Remington",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107471/gacha-discord-bot/veh/3/remington.png",
+    },
   ],
   "4-star": [
-    { name: "Elegant", picture: "./img/veh/4/Elegant.png" },
-    { name: "Landstalker", picture: "./img/veh/4/Landstalker.png" },
-    { name: "Sabre", picture: "./img/veh/4/Sabre.png" },
+    {
+      name: "Elegant",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107472/gacha-discord-bot/veh/4/elegant.png",
+    },
+    {
+      name: "Landstalker",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107469/gacha-discord-bot/veh/4/landstalker.png",
+    },
+    {
+      name: "Sabre",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107470/gacha-discord-bot/veh/4/sabre.png",
+    },
   ],
   "5-star": [
-    { name: "PCJ-600", picture: "./img/veh/5/PCJ-600.png" },
-    { name: "Rancher", picture: "./img/veh/5/Rancher.png" },
+    {
+      name: "PCJ-600",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107470/gacha-discord-bot/veh/5/pcj-600.png",
+    },
+    {
+      name: "Rancher",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107470/gacha-discord-bot/veh/5/rancher.png",
+    },
   ],
   "6-star": [
-    { name: "Premier", picture: "./img/veh/6/Premier.png" },
-    { name: "Admiral ", picture: "./img/veh/6/Admiral.png" },
+    {
+      name: "Premier",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107471/gacha-discord-bot/veh/6/premier.png",
+    },
+    {
+      name: "Admiral ",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702107471/gacha-discord-bot/veh/6/admiral.png",
+    },
+  ],
+};
+
+const preItems = {
+  "1-star": [
+    {
+      name: "Banshee",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132196/gacha-discord-bot/pre/1/banshee.jpg",
+    },
+    {
+      name: "BF400",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132199/gacha-discord-bot/pre/1/bf-400.jpg",
+    },
+    {
+      name: "Alpha",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132196/gacha-discord-bot/pre/1/alpha.jpg",
+    },
+  ],
+  "2-star": [
+    {
+      name: "Hotring Racer",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132296/gacha-discord-bot/pre/2/hotring-racer.jpg",
+    },
+    {
+      name: "Hotring Racer A",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132296/gacha-discord-bot/pre/2/hotring-racer.jpg",
+    },
+    {
+      name: "Hotring Racer B",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132296/gacha-discord-bot/pre/2/hotring-racer.jpg",
+    },
+    {
+      name: "FCR 900",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132297/gacha-discord-bot/pre/2/fcr-900.jpg",
+    },
+    {
+      name: "Elegy",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132298/gacha-discord-bot/pre/2/elegy.jpg",
+    },
+  ],
+  "3-star": [
+    {
+      name: "Buffalo",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132368/gacha-discord-bot/pre/3/buffalo.jpg",
+    },
+    {
+      name: "Huntley",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132368/gacha-discord-bot/pre/3/huntley.jpg",
+    },
+  ],
+  "4-star": [
+    {
+      name: "Cheetah",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132394/gacha-discord-bot/pre/4/cheetah.jpg",
+    },
+    {
+      name: "Bullet",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132393/gacha-discord-bot/pre/4/bullet.jpg",
+    },
+  ],
+  "5-star": [
+    {
+      name: "Sultan",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132409/gacha-discord-bot/pre/5/sultan.jpg",
+    },
+  ],
+  "6-star": [
+    {
+      name: "Infernus",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132426/gacha-discord-bot/pre/6/infernus.jpg",
+    },
+    {
+      name: "Turismo  ",
+      picture:
+        "https://res.cloudinary.com/f1nnie/image/upload/v1702132427/gacha-discord-bot/pre/6/turismo.jpg",
+    },
   ],
 };
 
@@ -241,7 +500,9 @@ client.on("message", function (message) {
         }
       );
     } else {
-      message.reply("Sử dụng '$roll gun' || '$roll car' || '$roll veh'.");
+      message.reply(
+        "```Sử dụng: \n'$roll gun' để roll súng và đạn (1P).\n'$roll car' để roll xe truck (2P).\n'$roll veh' để roll xe classic (3P).\n'$roll pre' để roll xe sport (P)```"
+      );
     }
   }
 
@@ -559,6 +820,89 @@ function handleVehGacha(message) {
     }
   );
 }
+function handlePreGacha(message) {
+  con.query(
+    "SELECT * FROM users WHERE user_id = ?",
+    [message.author.id],
+    function (err, res) {
+      if (err) console.log(err);
+      if (res != "") {
+        // Handle "pre" pack
+        if (res[0].points >= 3) {
+          const getNumber = rollPre();
+          let msg = "";
+          let files = "";
+          let item = "";
+
+          switch (getNumber[0]) {
+            case 6:
+              item = preItems["6-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star: :star: :star: :star: :star: :star:`;
+              files = preItems["6-star"][getNumber[1]].picture;
+              break;
+            case 5:
+              item = preItems["5-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star: :star: :star: :star: :star:`;
+              files = preItems["5-star"][getNumber[1]].picture;
+              break;
+            case 4:
+              item = preItems["4-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star: :star: :star: :star:`;
+              files = preItems["4-star"][getNumber[1]].picture;
+              break;
+            case 3:
+              item = vehItems["3-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star: :star: :star:`;
+              files = preItems["3-star"][getNumber[1]].picture;
+              break;
+            case 2:
+              item = preItems["2-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star: :star:`;
+              files = preItems["2-star"][getNumber[1]].picture;
+              break;
+            default:
+              item = preItems["1-star"][getNumber[1]].name;
+              msg = `${message.author} got ${item} :star:`;
+              files = preItems["1-star"][getNumber[1]].picture;
+              break;
+          }
+
+          message.channel.send(msg, {
+            files: [files],
+          });
+          let points = parseInt(res[0].points) - 3;
+          con.query(
+            "UPDATE users SET points = ? WHERE user_id = ?",
+            [points, message.author.id],
+            function (err, res) {
+              if (err) console.log(err);
+              if (res) console.log(res);
+            }
+          );
+
+          // Save result into gacha_result
+          const userId = message.author.id;
+          const ic = res[0].ic;
+          const itemName = item;
+          con.query(
+            "INSERT INTO gacha_result_car (user_id, ic, car_name, created_at) VALUES (?, ?, ?, NOW())",
+            [userId, ic, itemName],
+            function (err, res) {
+              if (err) console.log(err);
+              if (res) console.log("Kết quả gacha đã được lưu.");
+            }
+          );
+        } else {
+          message.reply("Không đủ point, bạn cần ít nhất 3 point để roll veh");
+        }
+      } else {
+        message.reply(
+          "Bạn chưa đăng ký tài khoản gacha. Nhập $register để đăng kí tài khoản"
+        );
+      }
+    }
+  );
+}
 
 /****** $func roll: gacha percentage ******/
 function rollGun() {
@@ -620,6 +964,29 @@ function rollVeh() {
     return [2, random];
   } else {
     const random = Math.floor(Math.random() * vehItems["1-star"].length);
+    return [1, random];
+  }
+}
+
+function rollPre() {
+  const number = (Math.floor(Math.random() * 1000) + 1) * 0.1;
+  if (number <= 1) {
+    const random = Math.floor(Math.random() * preItems["6-star"].length);
+    return [6, random];
+  } else if (number <= 4) {
+    const random = Math.floor(Math.random() * preItems["5-star"].length);
+    return [5, random];
+  } else if (number <= 19) {
+    const random = Math.floor(Math.random() * preItems["4-star"].length);
+    return [4, random];
+  } else if (number <= 39) {
+    const random = Math.floor(Math.random() * preItems["3-star"].length);
+    return [3, random];
+  } else if (number <= 64) {
+    const random = Math.floor(Math.random() * preItems["2-star"].length);
+    return [2, random];
+  } else {
+    const random = Math.floor(Math.random() * preItems["1-star"].length);
     return [1, random];
   }
 }
