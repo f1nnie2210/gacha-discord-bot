@@ -828,7 +828,7 @@ function handlePreGacha(message) {
       if (err) console.log(err);
       if (res != "") {
         // Handle "pre" pack
-        if (res[0].points >= 3) {
+        if (res[0].points >= 5) {
           const getNumber = rollPre();
           let msg = "";
           let files = "";
@@ -870,7 +870,7 @@ function handlePreGacha(message) {
           message.channel.send(msg, {
             files: [files],
           });
-          let points = parseInt(res[0].points) - 3;
+          let points = parseInt(res[0].points) - 5;
           con.query(
             "UPDATE users SET points = ? WHERE user_id = ?",
             [points, message.author.id],
