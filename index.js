@@ -851,7 +851,7 @@ function handlePreGacha(message) {
               files = preItems["4-star"][getNumber[1]].picture;
               break;
             case 3:
-              item = vehItems["3-star"][getNumber[1]].name;
+              item = preItems["3-star"][getNumber[1]].name;
               msg = `${message.author} got ${item} :star: :star: :star:`;
               files = preItems["3-star"][getNumber[1]].picture;
               break;
